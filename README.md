@@ -164,22 +164,10 @@ skl config locate            # Show the config file path
 
 ## Skill Repository Format
 
-A skill repository is a Git repository with the following structure:
+Any Git repository works. `skl` scans recursively for:
 
-```
-my-skills/
-├── review-pr/
-│   └── SKILL.md        ← skill definition
-├── commit/
-│   └── SKILL.md
-└── agents/
-    ├── code-reviewer.md  ← agent definition
-    └── tester.md
-```
-
-Each skill lives in its own folder with a `SKILL.md` file. Agents are `.md` files inside an `agents/` directory.
-
-`skl` installs skills as directories and agents as individual files into the appropriate location for each tool.
+- **Skills** — any folder containing a `SKILL.md` file (the folder name becomes the skill name)
+- **Agents** — any `.md` file inside an `agents/` directory
 
 ---
 
