@@ -1,4 +1,4 @@
-# skl
+# skl ⛷️
 
 **A package manager for AI skills and agents.**
 
