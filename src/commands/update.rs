@@ -87,26 +87,30 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                 }
             }
 
-            for skill in &locked.skills {
-                if current_skills.contains(skill) {
-                    if let Some(path) = find_skill_path(&source_dir, skill)? {
-                        fs::create_dir_all(&skills_dest)?;
-                        copy_dir(&path, &skills_dest.join(skill))?;
+            for skill in &current_skills {
+                if let Some(path) = find_skill_path(&source_dir, skill)? {
+                    fs::create_dir_all(&skills_dest)?;
+                    copy_dir(&path, &skills_dest.join(skill))?;
+                    if locked.skills.contains(skill) {
                         println!("🔄 Updated skill: {}", skill);
-                        installed_skills.push(skill.clone());
+                    } else {
+                        println!("✅ New skill: {}", skill);
                     }
+                    installed_skills.push(skill.clone());
                 }
             }
 
             let agents_dir = source_dir.join("agents");
-            for agent in &locked.agents {
-                if current_agents.contains(agent) {
-                    let agent_path = agents_dir.join(agent);
-                    fs::create_dir_all(&agents_dest)?;
-                    fs::copy(&agent_path, agents_dest.join(agent))?;
+            for agent in &current_agents {
+                let agent_path = agents_dir.join(agent);
+                fs::create_dir_all(&agents_dest)?;
+                fs::copy(&agent_path, agents_dest.join(agent))?;
+                if locked.agents.contains(agent) {
                     println!("🔄 Updated agent: {}", agent);
-                    installed_agents.push(agent.clone());
+                } else {
+                    println!("✅ New agent: {}", agent);
                 }
+                installed_agents.push(agent.clone());
             }
         }
 
