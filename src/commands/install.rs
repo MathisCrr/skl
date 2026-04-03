@@ -1,7 +1,8 @@
 use crate::{
     commands::{init::init, repo::{copy_dir, find_files, normalize_repo_id}},
     config::{Config, source_path},
-    lock::{Lockfile, LockedRepo},
+    lock::{Lockfile, LockedProfile, LockedRepo},
+    profile::SklToml,
     types::{AssetType, Only, SklError, Tool, resolve_path},
 };
 use std::{
@@ -18,6 +19,7 @@ pub fn install(
     skills: Option<Vec<String>>,
     agents: Option<Vec<String>>,
     only: Option<Only>,
+    profile: Option<String>,
 ) -> Result<(), SklError> {
     let config = match Config::load() {
         Ok(c) if !c.is_empty() => c,
@@ -40,6 +42,11 @@ pub fn install(
             "--only cannot be combined with --skill or --agent".to_string(),
         ));
     }
+    if profile.is_some() && (skills.is_some() || agents.is_some() || only.is_some()) {
+        return Err(SklError::InvalidArguments(
+            "--profile cannot be combined with --skill, --agent or --only".to_string(),
+        ));
+    }
 
     let repo_id = normalize_repo_id(&source);
     let local_source = source_path()?.join(&repo_id);
@@ -54,6 +61,25 @@ pub fn install(
             return Err(SklError::GitCloneFailed);
         }
     }
+
+    // Resolve profile filter if --profile was specified
+    let (skills, agents, locked_profile) = if let Some(ref profile_name) = profile {
+        let skl_toml = SklToml::load(&local_source)?
+            .ok_or_else(|| SklError::ProfileNotFound(profile_name.clone(), vec![]))?;
+        let p = skl_toml.get_profile(profile_name)?;
+        let locked = LockedProfile {
+            name: profile_name.clone(),
+            skills: p.skills.clone(),
+            agents: p.agents.clone(),
+        };
+        (
+            Some(p.skills.clone()),
+            Some(p.agents.clone()),
+            Some(locked),
+        )
+    } else {
+        (skills, agents, None)
+    };
 
     let mut installed_skills = Vec::new();
     let mut installed_agents = Vec::new();
@@ -89,6 +115,7 @@ pub fn install(
     lockfile.add_repo(LockedRepo {
         name: repo_id,
         url: Some(source),
+        profiles: locked_profile.into_iter().collect(),
         skills: installed_skills,
         agents: installed_agents,
     });

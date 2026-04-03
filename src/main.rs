@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod commands;
 mod config;
 mod lock;
+mod profile;
 mod types;
 
 #[derive(Parser)]
@@ -55,6 +56,9 @@ enum Commands {
         /// Install only skills or only agents
         #[arg(long)]
         only: Option<types::Only>,
+        /// Install only skills and agents from a specific profile defined in skl.toml
+        #[arg(long)]
+        profile: Option<String>,
     },
 
     /// List installed skills and agents
@@ -77,6 +81,12 @@ enum Commands {
     Uninstall {
         /// Repository to uninstall (e.g. my-org/skills or https://github.com/my-org/skills)
         repo: String,
+        /// Uninstall only a specific skill
+        #[arg(long)]
+        skill: Option<String>,
+        /// Uninstall only a specific profile
+        #[arg(long)]
+        profile: Option<String>,
     },
 
     /// Manage skl configuration
@@ -108,12 +118,12 @@ fn main() {
 
     let result = match args.command {
         Commands::Init => commands::init::init().map(|_| ()),
-        Commands::Install { source, tool, local, dest, skill, agent, only } => {
-            commands::install::install(source, tool, local, dest, skill, agent, only)
+        Commands::Install { source, tool, local, dest, skill, agent, only, profile } => {
+            commands::install::install(source, tool, local, dest, skill, agent, only, profile)
         }
         Commands::List { only } => commands::list::list(only),
         Commands::Update { repo, tool } => commands::update::update(repo, tool),
-        Commands::Uninstall { repo } => commands::uninstall::uninstall(repo),
+        Commands::Uninstall { repo, skill, profile } => commands::uninstall::uninstall(repo, skill, profile),
         Commands::Config { action } => match action {
             ConfigAction::Get { key } => commands::config::get(&key),
             ConfigAction::Set { key, value } => commands::config::set(&key, &value),

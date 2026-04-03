@@ -89,6 +89,7 @@ pub enum SklError {
     IoError(io::Error),
     InvalidArguments(String),
     RepoNotFound(String),
+    ProfileNotFound(String, Vec<String>),
 }
 
 impl fmt::Display for SklError {
@@ -101,6 +102,12 @@ impl fmt::Display for SklError {
             SklError::IoError(err) => write!(f, "IO error: {}", err),
             SklError::InvalidArguments(msg) => write!(f, "Invalid arguments: {}", msg),
             SklError::RepoNotFound(name) => write!(f, "Repo '{}' not found in lockfile", name),
+            SklError::ProfileNotFound(name, available) => write!(
+                f,
+                "Profile '{}' not found. Available profiles: {}",
+                name,
+                if available.is_empty() { "none (no skl.toml in this repository)".to_string() } else { available.join(", ") }
+            ),
         }
     }
 }

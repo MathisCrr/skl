@@ -15,11 +15,49 @@ pub struct Lockfile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LockedProfile {
+    pub name: String,
+    pub skills: Vec<String>,
+    pub agents: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockedRepo {
     pub name: String,
     pub url: Option<String>,
+    pub profiles: Vec<LockedProfile>,
     pub skills: Vec<String>,
     pub agents: Vec<String>,
+}
+
+impl LockedRepo {
+    /// Returns skills that belong exclusively to the given profiles (not shared with any other profile).
+    pub fn exclusive_skills(&self, profile_names: &[String]) -> Vec<String> {
+        let other_skills: Vec<&String> = self.profiles.iter()
+            .filter(|p| !profile_names.contains(&p.name))
+            .flat_map(|p| p.skills.iter())
+            .collect();
+        self.profiles.iter()
+            .filter(|p| profile_names.contains(&p.name))
+            .flat_map(|p| p.skills.iter())
+            .filter(|s| !other_skills.contains(s))
+            .cloned()
+            .collect()
+    }
+
+    /// Returns agents that belong exclusively to the given profiles (not shared with any other profile).
+    pub fn exclusive_agents(&self, profile_names: &[String]) -> Vec<String> {
+        let other_agents: Vec<&String> = self.profiles.iter()
+            .filter(|p| !profile_names.contains(&p.name))
+            .flat_map(|p| p.agents.iter())
+            .collect();
+        self.profiles.iter()
+            .filter(|p| profile_names.contains(&p.name))
+            .flat_map(|p| p.agents.iter())
+            .filter(|a| !other_agents.contains(a))
+            .cloned()
+            .collect()
+    }
 }
 
 impl Lockfile {

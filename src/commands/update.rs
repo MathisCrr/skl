@@ -2,6 +2,7 @@ use crate::{
     commands::repo::{copy_dir, find_files, normalize_repo_id},
     config::{Config, source_path},
     lock::{Lockfile, LockedRepo},
+    profile::SklToml,
     types::{AssetType, SklError, Tool, resolve_path},
 };
 use std::{fs, path::Path, process::Command};
@@ -55,8 +56,34 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             continue;
         }
 
+        // Re-apply profiles if any were used during install
+        let profile_filter: Option<(Vec<String>, Vec<String>)> = if !locked.profiles.is_empty() {
+            match SklToml::load(&source_dir)? {
+                Some(skl_toml) => {
+                    let names: Vec<String> = locked.profiles.iter().map(|p| p.name.clone()).collect();
+                    Some(skl_toml.resolve_profiles(&names))
+                }
+                None => {
+                    println!("⚠️  skl.toml not found in {}, installing all skills.", repo_id);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         let current_skills = scan_skills(&source_dir)?;
         let current_agents = scan_agents(&source_dir)?;
+
+        // Effective lists after applying profile filter
+        let effective_skills: Vec<String> = match &profile_filter {
+            Some((ps, _)) => current_skills.iter().filter(|s| ps.contains(s)).cloned().collect(),
+            None => current_skills.clone(),
+        };
+        let effective_agents: Vec<String> = match &profile_filter {
+            Some((_, pa)) => current_agents.iter().filter(|a| pa.contains(a)).cloned().collect(),
+            None => current_agents.clone(),
+        };
 
         let mut installed_skills = Vec::new();
         let mut installed_agents = Vec::new();
@@ -68,7 +95,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                 .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
 
             for skill in &locked.skills {
-                if !current_skills.contains(skill) {
+                if !effective_skills.contains(skill) {
                     let path = skills_dest.join(skill);
                     if path.exists() {
                         fs::remove_dir_all(&path)?;
@@ -78,7 +105,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             }
 
             for agent in &locked.agents {
-                if !current_agents.contains(agent) {
+                if !effective_agents.contains(agent) {
                     let path = agents_dest.join(agent);
                     if path.exists() {
                         fs::remove_file(&path)?;
@@ -87,7 +114,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                 }
             }
 
-            for skill in &current_skills {
+            for skill in &effective_skills {
                 if let Some(path) = find_skill_path(&source_dir, skill)? {
                     fs::create_dir_all(&skills_dest)?;
                     copy_dir(&path, &skills_dest.join(skill))?;
@@ -101,7 +128,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             }
 
             let agents_dir = source_dir.join("agents");
-            for agent in &current_agents {
+            for agent in &effective_agents {
                 let agent_path = agents_dir.join(agent);
                 fs::create_dir_all(&agents_dest)?;
                 fs::copy(&agent_path, agents_dest.join(agent))?;
@@ -114,9 +141,29 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             }
         }
 
+        // Update locked profiles with refreshed skill/agent lists from skl.toml
+        let updated_profiles = if !locked.profiles.is_empty() {
+            match SklToml::load(&source_dir)? {
+                Some(skl_toml) => locked.profiles.iter().map(|lp| {
+                    match skl_toml.get_profile(&lp.name) {
+                        Ok(p) => crate::lock::LockedProfile {
+                            name: lp.name.clone(),
+                            skills: p.skills.clone(),
+                            agents: p.agents.clone(),
+                        },
+                        Err(_) => lp.clone(),
+                    }
+                }).collect(),
+                None => locked.profiles.clone(),
+            }
+        } else {
+            vec![]
+        };
+
         lockfile.add_repo(LockedRepo {
             name: repo_id.clone(),
             url: locked.url.clone(),
+            profiles: updated_profiles,
             skills: installed_skills,
             agents: installed_agents,
         });
