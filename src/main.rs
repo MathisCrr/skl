@@ -89,6 +89,12 @@ enum Commands {
         profile: Option<String>,
     },
 
+    /// Create a new skill repository
+    New {
+        /// Name of the repository to create
+        name: String,
+    },
+
     /// Manage skl configuration
     Config {
         #[command(subcommand)]
@@ -123,6 +129,7 @@ fn main() {
         }
         Commands::List { only } => commands::list::list(only),
         Commands::Update { repo, tool } => commands::update::update(repo, tool),
+        Commands::New { name } => commands::new::new(name),
         Commands::Uninstall { repo, skill, profile } => commands::uninstall::uninstall(repo, skill, profile),
         Commands::Config { action } => match action {
             ConfigAction::Get { key } => commands::config::get(&key),
