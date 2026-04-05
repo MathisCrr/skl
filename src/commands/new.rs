@@ -1,4 +1,5 @@
-use crate::types::SklError;
+use crate::{types::SklError, ui};
+use colored::Colorize;
 use std::fs;
 use std::path::Path;
 
@@ -60,14 +61,8 @@ You are an expert in... Describe the agent's role and instructions here.
 "#,
     )?;
 
-    if in_place {
-        println!("✅ Scaffolded in current directory");
-    } else {
-        println!("✅ Created '{}'", name);
-    }
-    println!("   {}/skl.toml", name);
-    println!("   {}/example-skill/SKILL.md", name);
-    println!("   {}/agents/example-agent.md", name);
+    let label = if in_place { ".".to_string() } else { name.clone() };
+    ui::success(&format!("repository {} ready", label.bold()));
 
     Ok(())
 }

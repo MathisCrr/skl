@@ -3,7 +3,9 @@ use crate::{
     config::{Config, source_path},
     lock::Lockfile,
     types::{AssetType, SklError, resolve_path},
+    ui,
 };
+use colored::Colorize;
 use std::fs;
 
 pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -> Result<(), SklError> {
@@ -44,18 +46,18 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
                 let path = skills_dest.join(skill);
                 if path.exists() {
                     fs::remove_dir_all(&path)?;
-                    println!("🗑️  Removed skill: {}", skill);
+                    ui::removed(&format!("skill  {}", skill.bold()));
                 } else {
-                    println!("⚠️  Skill '{}' not found on filesystem, skipping", skill);
+                    ui::warning(&format!("skill '{}' not found on filesystem, skipping", skill.bold()));
                 }
             }
             for agent in &locked.agents {
                 let path = agents_dest.join(agent);
                 if path.exists() {
                     fs::remove_file(&path)?;
-                    println!("🗑️  Removed agent: {}", agent);
+                    ui::removed(&format!("agent  {}", agent.bold()));
                 } else {
-                    println!("⚠️  Agent '{}' not found on filesystem, skipping", agent);
+                    ui::warning(&format!("agent '{}' not found on filesystem, skipping", agent.bold()));
                 }
             }
         }
@@ -63,7 +65,7 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
         if source.exists() {
             fs::remove_dir_all(&source)?;
         }
-        println!("✅ Uninstalled repo: {}", repo_id);
+        ui::removed(&format!("repo   {}", repo_id.bold()));
     }
 
     lockfile.save()?;
@@ -84,7 +86,7 @@ fn uninstall_skill(tools: &[crate::types::Tool], repo_id: &str, skill_name: &str
         let path = skills_dest.join(skill_name);
         if path.exists() {
             fs::remove_dir_all(&path)?;
-            println!("🗑️  Removed skill: {}", skill_name);
+            ui::removed(&format!("skill  {}", skill_name.bold()));
         }
     }
 
@@ -119,14 +121,14 @@ fn uninstall_profile(tools: &[crate::types::Tool], repo_id: &str, profile_name: 
             let path = skills_dest.join(skill);
             if path.exists() {
                 fs::remove_dir_all(&path)?;
-                println!("🗑️  Removed skill: {}", skill);
+                ui::removed(&format!("skill  {}", skill.bold()));
             }
         }
         for agent in &agents_to_remove {
             let path = agents_dest.join(agent);
             if path.exists() {
                 fs::remove_file(&path)?;
-                println!("🗑️  Removed agent: {}", agent);
+                ui::removed(&format!("agent  {}", agent.bold()));
             }
         }
     }
@@ -136,7 +138,5 @@ fn uninstall_profile(tools: &[crate::types::Tool], repo_id: &str, profile_name: 
     locked_mut.profiles.retain(|p| p.name != profile_name);
     locked_mut.skills.retain(|s| !skills_to_remove.contains(s));
     locked_mut.agents.retain(|a| !agents_to_remove.contains(a));
-
-    println!("✅ Removed profile '{}' from {}", profile_name, repo_id);
     Ok(())
 }

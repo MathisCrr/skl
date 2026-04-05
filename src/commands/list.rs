@@ -5,6 +5,7 @@ use crate::{
     lock::Lockfile,
     types::{AssetType, Only, SklError, resolve_path},
 };
+use colored::Colorize;
 
 pub fn list(only: Option<Only>) -> Result<(), SklError> {
     let config = Config::load()?;
@@ -12,10 +13,8 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
 
     for tool in &config.tools {
         if !matches!(only, Some(Only::Agent)) {
-            println!("Skills:");
             if let Some(skills_dir) = resolve_path(tool, &AssetType::Skill, false, None) {
                 if skills_dir.is_dir() {
-                    // repo → [(skill_name, profiles)]
                     let mut grouped: HashMap<String, Vec<(String, Vec<String>)>> = HashMap::new();
                     let mut ungrouped: Vec<String> = Vec::new();
 
@@ -36,9 +35,8 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         }
                     }
 
-                    if grouped.is_empty() && ungrouped.is_empty() {
-                        println!("  (none)");
-                    } else {
+                    if !grouped.is_empty() || !ungrouped.is_empty() {
+                        println!("{}", "Skills".bold());
                         let mut repos: Vec<String> = grouped.keys().cloned().collect();
                         repos.sort();
                         for repo in repos {
@@ -47,9 +45,9 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                                 .map(|r| r.profiles.iter().map(|p| p.name.clone()).collect())
                                 .unwrap_or_default();
                             if repo_profiles.is_empty() {
-                                println!("  {}", repo);
+                                println!("  {}", repo.cyan());
                             } else {
-                                println!("  {}  [{}]", repo, repo_profiles.join(", "));
+                                println!("  {}  {}", repo.cyan(), format!("[{}]", repo_profiles.join(", ")).dimmed());
                             }
 
                             let mut skills = grouped[&repo].clone();
@@ -57,28 +55,25 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                             let max_len = skills.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
                             for (skill, profiles) in skills {
                                 if profiles.is_empty() {
-                                    println!("    - {}", skill);
+                                    println!("    {} {}", "›".dimmed(), skill);
                                 } else {
-                                    println!("    - {:<width$}  · {}", skill, profiles.join(", "), width = max_len);
+                                    println!("    {} {:<width$}  {} {}", "›".dimmed(), skill, "·".dimmed(), profiles.join(", ").dimmed(), width = max_len);
                                 }
                             }
                         }
                         if !ungrouped.is_empty() {
                             ungrouped.sort();
-                            println!("  (no repo)");
+                            println!("  {}", "(local)".dimmed());
                             for skill in ungrouped {
-                                println!("    - {}", skill);
+                                println!("    {} {}", "›".dimmed(), skill);
                             }
                         }
                     }
-                } else {
-                    println!("  (none)");
                 }
             }
         }
 
         if !matches!(only, Some(Only::Skill)) {
-            println!("Agents:");
             if let Some(agents_dir) = resolve_path(tool, &AssetType::Agent, false, None) {
                 if agents_dir.is_dir() {
                     let mut grouped: HashMap<String, Vec<(String, Vec<String>)>> = HashMap::new();
@@ -101,9 +96,8 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         }
                     }
 
-                    if grouped.is_empty() && ungrouped.is_empty() {
-                        println!("  (none)");
-                    } else {
+                    if !grouped.is_empty() || !ungrouped.is_empty() {
+                        println!("{}", "Agents".bold());
                         let mut repos: Vec<String> = grouped.keys().cloned().collect();
                         repos.sort();
                         for repo in repos {
@@ -112,9 +106,9 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                                 .map(|r| r.profiles.iter().map(|p| p.name.clone()).collect())
                                 .unwrap_or_default();
                             if repo_profiles.is_empty() {
-                                println!("  {}", repo);
+                                println!("  {}", repo.cyan());
                             } else {
-                                println!("  {}  [{}]", repo, repo_profiles.join(", "));
+                                println!("  {}  {}", repo.cyan(), format!("[{}]", repo_profiles.join(", ")).dimmed());
                             }
 
                             let mut agents = grouped[&repo].clone();
@@ -122,22 +116,20 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                             let max_len = agents.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
                             for (agent, profiles) in agents {
                                 if profiles.is_empty() {
-                                    println!("    - {}", agent);
+                                    println!("    {} {}", "›".dimmed(), agent);
                                 } else {
-                                    println!("    - {:<width$}  · {}", agent, profiles.join(", "), width = max_len);
+                                    println!("    {} {:<width$}  {} {}", "›".dimmed(), agent, "·".dimmed(), profiles.join(", ").dimmed(), width = max_len);
                                 }
                             }
                         }
                         if !ungrouped.is_empty() {
                             ungrouped.sort();
-                            println!("  (no repo)");
+                            println!("  {}", "(local)".dimmed());
                             for agent in ungrouped {
-                                println!("    - {}", agent);
+                                println!("    {} {}", "›".dimmed(), agent);
                             }
                         }
                     }
-                } else {
-                    println!("  (none)");
                 }
             }
         }

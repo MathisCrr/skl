@@ -1,9 +1,9 @@
-use crate::config::Config;
-use crate::types::{SklError, Tool};
+use crate::{config::Config, types::{SklError, Tool}, ui};
+use colored::Colorize;
 use dialoguer::MultiSelect;
 
 pub fn init() -> Result<Config, SklError> {
-    println!("Welcome to skl! Let's set up your tools.");
+    println!("Welcome to {}! Let's set up your tools.", "skl".cyan().bold());
 
     let available_tools = vec!["claude"];
     let detected: Vec<bool> = vec![
@@ -18,7 +18,7 @@ pub fn init() -> Result<Config, SklError> {
         .unwrap();
 
     if selected.is_empty() {
-        println!("No tools selected, aborting.");
+        ui::warning("no tools selected, aborting");
         return Err(SklError::InvalidArguments("No tools selected".to_string()));
     }
 
@@ -29,7 +29,7 @@ pub fn init() -> Result<Config, SklError> {
 
     let config = Config { tools };
     config.save()?;
-    println!("✅ Config saved!");
+    ui::success("config saved");
 
     Ok(config)
 }

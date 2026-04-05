@@ -4,8 +4,10 @@ use crate::{
     lock::{Lockfile, LockedRepo},
     profile::SklToml,
     types::{AssetType, SklError, Tool, resolve_path},
+    ui,
 };
-use std::{fs, path::Path, process::Command};
+use colored::Colorize;
+use std::{fs, path::Path, process::{Command, Stdio}};
 
 pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> {
     let config = Config::load()?;
@@ -23,7 +25,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
     };
 
     if repo_ids.is_empty() {
-        println!("No repositories to update.");
+        ui::warning("no repositories to update");
         return Ok(());
     }
 
@@ -35,26 +37,34 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             .ok_or_else(|| SklError::RepoNotFound(repo_id.clone()))?
             .clone();
 
-        println!("Updating {}...", repo_id);
-
         let source_dir = source_path()?.join(repo_id);
         let dir = source_dir.to_str().unwrap();
 
+        let sp = ui::spinner(&format!("Updating {}", repo_id.bold()));
+
         let fetch = Command::new("git")
             .args(["-C", dir, "fetch", "--depth=1"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .status()?;
         if !fetch.success() {
-            println!("⚠️  Failed to fetch {}, skipping.", repo_id);
+            sp.finish_and_clear();
+            ui::warning(&format!("failed to fetch {}, skipping", repo_id.bold()));
             continue;
         }
 
         let reset = Command::new("git")
             .args(["-C", dir, "reset", "--hard", "origin/HEAD"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .status()?;
         if !reset.success() {
-            println!("⚠️  Failed to reset {}, skipping.", repo_id);
+            sp.finish_and_clear();
+            ui::warning(&format!("failed to reset {}, skipping", repo_id.bold()));
             continue;
         }
+
+        sp.finish_and_clear();
 
         // Re-apply profiles if any were used during install
         let profile_filter: Option<(Vec<String>, Vec<String>)> = if !locked.profiles.is_empty() {
@@ -64,7 +74,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                     Some(skl_toml.resolve_profiles(&names))
                 }
                 None => {
-                    println!("⚠️  skl.toml not found in {}, installing all skills.", repo_id);
+                    ui::warning(&format!("skl.toml not found in {}, installing all skills", repo_id.bold()));
                     None
                 }
             }
@@ -100,7 +110,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                     if path.exists() {
                         fs::remove_dir_all(&path)?;
                     }
-                    println!("🗑️  Removed skill: {}", skill);
+                    ui::removed(&format!("skill  {}", skill.bold()));
                 }
             }
 
@@ -110,7 +120,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                     if path.exists() {
                         fs::remove_file(&path)?;
                     }
-                    println!("🗑️  Removed agent: {}", agent);
+                    ui::removed(&format!("agent  {}", agent.bold()));
                 }
             }
 
@@ -118,11 +128,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                 if let Some(path) = find_skill_path(&source_dir, skill)? {
                     fs::create_dir_all(&skills_dest)?;
                     copy_dir(&path, &skills_dest.join(skill))?;
-                    if locked.skills.contains(skill) {
-                        println!("🔄 Updated skill: {}", skill);
-                    } else {
-                        println!("✅ New skill: {}", skill);
-                    }
+                    ui::success(&format!("skill  {}", skill.bold()));
                     installed_skills.push(skill.clone());
                 }
             }
@@ -132,11 +138,7 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
                 let agent_path = agents_dir.join(agent);
                 fs::create_dir_all(&agents_dest)?;
                 fs::copy(&agent_path, agents_dest.join(agent))?;
-                if locked.agents.contains(agent) {
-                    println!("🔄 Updated agent: {}", agent);
-                } else {
-                    println!("✅ New agent: {}", agent);
-                }
+                ui::success(&format!("agent  {}", agent.bold()));
                 installed_agents.push(agent.clone());
             }
         }
@@ -167,8 +169,6 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
             skills: installed_skills,
             agents: installed_agents,
         });
-
-        println!("✅ Updated {}", repo_id);
     }
 
     lockfile.save()?;

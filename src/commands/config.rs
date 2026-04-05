@@ -1,5 +1,5 @@
-use crate::config::{Config, config_path};
-use crate::types::SklError;
+use crate::{config::{Config, config_path}, types::SklError, ui};
+use colored::Colorize;
 
 pub fn get(key: &str) -> Result<(), SklError> {
     let config = Config::load()?;
@@ -24,7 +24,7 @@ pub fn set(key: &str, value: &str) -> Result<(), SklError> {
     }
 
     config.save()?;
-    println!("✅ {} = {}", key, value);
+    ui::success(&format!("{} = {}", key.bold(), value));
 
     Ok(())
 }

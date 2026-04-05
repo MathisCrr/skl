@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use std::path::PathBuf;
 
 mod commands;
@@ -6,6 +7,7 @@ mod config;
 mod lock;
 mod profile;
 mod types;
+mod ui;
 
 #[derive(Parser)]
 #[command(
@@ -140,7 +142,7 @@ fn main() {
     };
 
     if let Err(err) = result {
-        eprintln!("❌ {}", err);
+        eprintln!("{} {}", "error:".red().bold(), err);
         std::process::exit(1);
     }
 }

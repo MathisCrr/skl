@@ -4,11 +4,13 @@ use crate::{
     lock::{Lockfile, LockedProfile, LockedRepo},
     profile::SklToml,
     types::{AssetType, Only, SklError, Tool, resolve_path},
+    ui,
 };
+use colored::Colorize;
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 pub fn install(
@@ -52,11 +54,15 @@ pub fn install(
     let local_source = source_path()?.join(&repo_id);
     fs::create_dir_all(local_source.parent().unwrap())?;
     if local_source.exists() {
-        println!("⚠️  '{}' already cloned, deploying from existing source. Run `skl update {}` to refresh.", repo_id, repo_id);
+        ui::warning(&format!("{} already cloned — run {} to refresh", repo_id.bold(), "skl update".cyan()));
     } else {
+        let sp = ui::spinner(&format!("Cloning {}", repo_id.bold()));
         let status = Command::new("git")
             .args(["clone", "--depth=1", &source, local_source.to_str().unwrap()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .status()?;
+        sp.finish_and_clear();
         if !status.success() {
             return Err(SklError::GitCloneFailed);
         }
@@ -128,7 +134,7 @@ fn deploy_skills(source: &Path, dest: &Path, skills: Option<Vec<String>>) -> Res
     let found_skills = find_files(source, "SKILL.md")?;
 
     if found_skills.is_empty() {
-        println!("No skills found in {:?}", source);
+        ui::warning("no skills found");
         return Ok(vec![]);
     }
 
@@ -146,7 +152,7 @@ fn deploy_skills(source: &Path, dest: &Path, skills: Option<Vec<String>>) -> Res
 
         copy_dir(found_skill, &dest.join(found_skill_name))?;
         installed_skills.push(found_skill_name.to_string());
-        println!("✅ Installed skill: {}", found_skill_name);
+        ui::success(&format!("skill  {}", found_skill_name.bold()));
     }
 
     if let Some(filter) = skills {
@@ -155,7 +161,7 @@ fn deploy_skills(source: &Path, dest: &Path, skills: Option<Vec<String>>) -> Res
             .filter(|s| !installed_skills.contains(s))
             .collect();
         if !not_found.is_empty() {
-            println!("⚠️  Skills not found: {}", not_found.join(", "));
+            ui::warning(&format!("skills not found: {}", not_found.join(", ")));
         }
     }
 
@@ -167,7 +173,7 @@ fn deploy_agents(source: &Path, dest: &Path, agents: Option<Vec<String>>) -> Res
     let found_agents = find_files(&agents_dir, ".md")?;
 
     if found_agents.is_empty() {
-        println!("No agents found in {:?}", agents_dir);
+        ui::warning("no agents found");
         return Ok(vec![]);
     }
 
@@ -185,7 +191,7 @@ fn deploy_agents(source: &Path, dest: &Path, agents: Option<Vec<String>>) -> Res
 
         fs::copy(found_agent, dest.join(agent_name))?;
         installed_agents.push(agent_name.to_string());
-        println!("✅ Installed agent: {}", agent_name);
+        ui::success(&format!("agent  {}", agent_name.bold()));
     }
 
     if let Some(filter) = agents {
@@ -194,7 +200,7 @@ fn deploy_agents(source: &Path, dest: &Path, agents: Option<Vec<String>>) -> Res
             .filter(|a| !installed_agents.contains(a))
             .collect();
         if !not_found.is_empty() {
-            println!("⚠️  Agents not found: {}", not_found.join(", "));
+            ui::warning(&format!("agents not found: {}", not_found.join(", ")));
         }
     }
 
