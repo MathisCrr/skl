@@ -4,5 +4,6 @@ pub mod install;
 pub mod list;
 pub mod new;
 pub mod repo;
+pub mod show;
 pub mod uninstall;
 pub mod update;

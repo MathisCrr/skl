@@ -91,6 +91,12 @@ enum Commands {
         profile: Option<String>,
     },
 
+    /// Show the content of a skill or agent
+    Show {
+        /// Name of the skill or agent to display
+        name: String,
+    },
+
     /// Create a new skill repository
     New {
         /// Name of the repository to create
@@ -130,6 +136,7 @@ fn main() {
             commands::install::install(source, tool, local, dest, skill, agent, only, profile)
         }
         Commands::List { only } => commands::list::list(only),
+        Commands::Show { name } => commands::show::show(name),
         Commands::Update { repo, tool } => commands::update::update(repo, tool),
         Commands::New { name } => commands::new::new(name),
         Commands::Uninstall { repo, skill, profile } => commands::uninstall::uninstall(repo, skill, profile),
