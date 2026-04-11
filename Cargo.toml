@@ -1,9 +1,14 @@
 [package]
-name = "skl"
+name = "skl-cli"
 version = "0.1.0"
 edition = "2024"
 description = "AI skills package manager — install, share and manage skills, contexts and agents across your team."
+repository = "https://github.com/MathisCrr/skl"
+license = "MIT"
 
+[[bin]]
+name = "skl"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.6.0", features = ["derive"] }
