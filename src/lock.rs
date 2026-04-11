@@ -33,11 +33,14 @@ pub struct LockedRepo {
 impl LockedRepo {
     /// Returns skills that belong exclusively to the given profiles (not shared with any other profile).
     pub fn exclusive_skills(&self, profile_names: &[String]) -> Vec<String> {
-        let other_skills: Vec<&String> = self.profiles.iter()
+        let other_skills: Vec<&String> = self
+            .profiles
+            .iter()
             .filter(|p| !profile_names.contains(&p.name))
             .flat_map(|p| p.skills.iter())
             .collect();
-        self.profiles.iter()
+        self.profiles
+            .iter()
             .filter(|p| profile_names.contains(&p.name))
             .flat_map(|p| p.skills.iter())
             .filter(|s| !other_skills.contains(s))
@@ -47,11 +50,14 @@ impl LockedRepo {
 
     /// Returns agents that belong exclusively to the given profiles (not shared with any other profile).
     pub fn exclusive_agents(&self, profile_names: &[String]) -> Vec<String> {
-        let other_agents: Vec<&String> = self.profiles.iter()
+        let other_agents: Vec<&String> = self
+            .profiles
+            .iter()
             .filter(|p| !profile_names.contains(&p.name))
             .flat_map(|p| p.agents.iter())
             .collect();
-        self.profiles.iter()
+        self.profiles
+            .iter()
             .filter(|p| profile_names.contains(&p.name))
             .flat_map(|p| p.agents.iter())
             .filter(|a| !other_agents.contains(a))
@@ -73,7 +79,8 @@ impl Lockfile {
     pub fn save(&self) -> Result<(), SklError> {
         let path = lock_path()?;
         fs::create_dir_all(path.parent().unwrap())?;
-        let content = toml::to_string(self).map_err(|e| SklError::ConfigParseError(e.to_string()))?;
+        let content =
+            toml::to_string(self).map_err(|e| SklError::ConfigParseError(e.to_string()))?;
         fs::write(path, content)?;
         Ok(())
     }

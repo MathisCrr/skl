@@ -31,4 +31,3 @@ pub fn warning(msg: &str) {
 pub fn action(msg: &str) {
     println!("{} {}", "→".cyan(), msg);
 }
-

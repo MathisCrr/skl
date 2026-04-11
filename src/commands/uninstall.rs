@@ -8,7 +8,11 @@ use crate::{
 use colored::Colorize;
 use std::fs;
 
-pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -> Result<(), SklError> {
+pub fn uninstall(
+    repo: String,
+    skill: Option<String>,
+    profile: Option<String>,
+) -> Result<(), SklError> {
     if skill.is_some() && profile.is_some() {
         return Err(SklError::InvalidArguments(
             "--skill and --profile cannot be combined".to_string(),
@@ -32,15 +36,23 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
         uninstall_skill(&config.tools, &repo_id, &skill_name, &mut lockfile)?;
     } else if let Some(profile_name) = profile {
         // Remove all skills belonging to this profile (not shared with other profiles)
-        uninstall_profile(&config.tools, &repo_id, &profile_name, &locked, &mut lockfile)?;
+        uninstall_profile(
+            &config.tools,
+            &repo_id,
+            &profile_name,
+            &locked,
+            &mut lockfile,
+        )?;
     } else {
         // Remove everything
         lockfile.remove_repo(&repo_id);
         for tool in &config.tools {
-            let skills_dest = resolve_path(tool, &AssetType::Skill, false, None)
-                .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
-            let agents_dest = resolve_path(tool, &AssetType::Agent, false, None)
-                .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
+            let skills_dest = resolve_path(tool, &AssetType::Skill, false, None).ok_or(
+                SklError::InvalidArguments("Could not resolve destination path".to_string()),
+            )?;
+            let agents_dest = resolve_path(tool, &AssetType::Agent, false, None).ok_or(
+                SklError::InvalidArguments("Could not resolve destination path".to_string()),
+            )?;
 
             for skill in &locked.skills {
                 let path = skills_dest.join(skill);
@@ -48,7 +60,10 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
                     fs::remove_dir_all(&path)?;
                     ui::removed(&format!("skill  {}", skill.bold()));
                 } else {
-                    ui::warning(&format!("skill '{}' not found on filesystem, skipping", skill.bold()));
+                    ui::warning(&format!(
+                        "skill '{}' not found on filesystem, skipping",
+                        skill.bold()
+                    ));
                 }
             }
             for agent in &locked.agents {
@@ -57,7 +72,10 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
                     fs::remove_file(&path)?;
                     ui::removed(&format!("agent  {}", agent.bold()));
                 } else {
-                    ui::warning(&format!("agent '{}' not found on filesystem, skipping", agent.bold()));
+                    ui::warning(&format!(
+                        "agent '{}' not found on filesystem, skipping",
+                        agent.bold()
+                    ));
                 }
             }
         }
@@ -72,17 +90,29 @@ pub fn uninstall(repo: String, skill: Option<String>, profile: Option<String>) -
     Ok(())
 }
 
-fn uninstall_skill(tools: &[crate::types::Tool], repo_id: &str, skill_name: &str, lockfile: &mut Lockfile) -> Result<(), SklError> {
-    let locked = lockfile.repos.iter_mut().find(|r| r.name == repo_id)
+fn uninstall_skill(
+    tools: &[crate::types::Tool],
+    repo_id: &str,
+    skill_name: &str,
+    lockfile: &mut Lockfile,
+) -> Result<(), SklError> {
+    let locked = lockfile
+        .repos
+        .iter_mut()
+        .find(|r| r.name == repo_id)
         .ok_or_else(|| SklError::RepoNotFound(repo_id.to_string()))?;
 
     if !locked.skills.contains(&skill_name.to_string()) {
-        return Err(SklError::InvalidArguments(format!("Skill '{}' not found in repo '{}'", skill_name, repo_id)));
+        return Err(SklError::InvalidArguments(format!(
+            "Skill '{}' not found in repo '{}'",
+            skill_name, repo_id
+        )));
     }
 
     for tool in tools {
-        let skills_dest = resolve_path(tool, &AssetType::Skill, false, None)
-            .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
+        let skills_dest = resolve_path(tool, &AssetType::Skill, false, None).ok_or(
+            SklError::InvalidArguments("Could not resolve destination path".to_string()),
+        )?;
         let path = skills_dest.join(skill_name);
         if path.exists() {
             fs::remove_dir_all(&path)?;
@@ -99,7 +129,13 @@ fn uninstall_skill(tools: &[crate::types::Tool], repo_id: &str, skill_name: &str
     Ok(())
 }
 
-fn uninstall_profile(tools: &[crate::types::Tool], repo_id: &str, profile_name: &str, locked: &crate::lock::LockedRepo, lockfile: &mut Lockfile) -> Result<(), SklError> {
+fn uninstall_profile(
+    tools: &[crate::types::Tool],
+    repo_id: &str,
+    profile_name: &str,
+    locked: &crate::lock::LockedRepo,
+    lockfile: &mut Lockfile,
+) -> Result<(), SklError> {
     if !locked.profiles.iter().any(|p| p.name == profile_name) {
         return Err(SklError::ProfileNotFound(
             profile_name.to_string(),
@@ -112,10 +148,12 @@ fn uninstall_profile(tools: &[crate::types::Tool], repo_id: &str, profile_name: 
     let agents_to_remove = locked.exclusive_agents(&profile_names);
 
     for tool in tools {
-        let skills_dest = resolve_path(tool, &AssetType::Skill, false, None)
-            .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
-        let agents_dest = resolve_path(tool, &AssetType::Agent, false, None)
-            .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
+        let skills_dest = resolve_path(tool, &AssetType::Skill, false, None).ok_or(
+            SklError::InvalidArguments("Could not resolve destination path".to_string()),
+        )?;
+        let agents_dest = resolve_path(tool, &AssetType::Agent, false, None).ok_or(
+            SklError::InvalidArguments("Could not resolve destination path".to_string()),
+        )?;
 
         for skill in &skills_to_remove {
             let path = skills_dest.join(skill);
@@ -134,7 +172,11 @@ fn uninstall_profile(tools: &[crate::types::Tool], repo_id: &str, profile_name: 
     }
 
     // Update lockfile
-    let locked_mut = lockfile.repos.iter_mut().find(|r| r.name == repo_id).unwrap();
+    let locked_mut = lockfile
+        .repos
+        .iter_mut()
+        .find(|r| r.name == repo_id)
+        .unwrap();
     locked_mut.profiles.retain(|p| p.name != profile_name);
     locked_mut.skills.retain(|s| !skills_to_remove.contains(s));
     locked_mut.agents.retain(|a| !agents_to_remove.contains(a));

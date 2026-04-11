@@ -1,5 +1,8 @@
 use crate::types::SklError;
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub fn normalize_repo_id(input: &str) -> String {
     if input.starts_with("https://") || input.starts_with("http://") {

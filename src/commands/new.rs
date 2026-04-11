@@ -61,7 +61,11 @@ You are an expert in... Describe the agent's role and instructions here.
 "#,
     )?;
 
-    let label = if in_place { ".".to_string() } else { name.clone() };
+    let label = if in_place {
+        ".".to_string()
+    } else {
+        name.clone()
+    };
     ui::success(&format!("repository {} ready", label.bold()));
 
     Ok(())

@@ -22,7 +22,8 @@ src/
     ├── repo.rs      ← shared: normalize_repo_id, find_files, copy_dir
     ├── init.rs      ← wizard to detect/select tools (dialoguer MultiSelect)
     ├── install.rs   ← clone + deploy skills/agents, profile support
-    ├── list.rs      ← list installed skills/agents grouped by repo
+    ├── list.rs      ← list installed skills/agents grouped by repo, with descriptions
+    ├── show.rs      ← display full content of a skill or agent by name
     ├── update.rs    ← fetch + reset --hard, re-apply profiles
     ├── uninstall.rs ← remove skills/agents + source dir, profile/skill granularity
     ├── new.rs       ← scaffold a new skill repository
@@ -141,7 +142,8 @@ pub fn action(msg: &str)    // → cyan  (reserved for future use)
 ```bash
 skl init                                              # wizard: detect + select tools
 skl install <url> [--tool <t>] [--local] [--dest <p>] [--skill <n>...] [--agent <n>...] [--only skills|agents] [--profile <name>]
-skl list [--only skills|agents]
+skl list [--only skills|agents]                       # shows description + profiles per item
+skl show <name>                                       # display full SKILL.md or agent .md
 skl update [repo] [--tool <t>]
 skl uninstall <repo> [--skill <name>] [--profile <name>]
 skl new <name>                                        # scaffold a new skill repository
@@ -208,6 +210,9 @@ my-org/skills/
 - No `Scope` enum — replaced by `--local` bool flag and `--dest` path
 - No `add`/`remove` commands (v1 scope: repo-level install/uninstall only)
 - `skl.lock` hybrid approach: lockfile tracks remote installs, filesystem is truth for `list`
+- `list` reads `description:` from SKILL.md / agent frontmatter at display time (no cache); truncated to 50 chars inline; profiles shown in `bright_yellow`
+- `show` searches skills then agents across all configured tools; accepts name with or without `.md` for agents; errors with `RepoNotFound` if not found
+- Local skills (not in lockfile) cannot be uninstalled via `skl uninstall` — they are managed manually
 - Shallow clones (`--depth=1`) for bandwidth efficiency; update uses `fetch + reset --hard` (not `git pull`)
 - git clone via `std::process::Command` (no git2 crate dependency)
 - git stdout/stderr suppressed during spinners via `Stdio::null()`

@@ -1,14 +1,19 @@
-use crate::{config::Config, types::{SklError, Tool}, ui};
+use crate::{
+    config::Config,
+    types::{SklError, Tool},
+    ui,
+};
 use colored::Colorize;
 use dialoguer::MultiSelect;
 
 pub fn init() -> Result<Config, SklError> {
-    println!("Welcome to {}! Let's set up your tools.", "skl".cyan().bold());
+    println!(
+        "Welcome to {}! Let's set up your tools.",
+        "skl".cyan().bold()
+    );
 
     let available_tools = vec!["claude"];
-    let detected: Vec<bool> = vec![
-        dirs::home_dir().map_or(false, |h| h.join(".claude").exists()),
-    ];
+    let detected: Vec<bool> = vec![dirs::home_dir().map_or(false, |h| h.join(".claude").exists())];
 
     let selected = MultiSelect::new()
         .with_prompt("Select tools to install skills for (space to select, enter to confirm)")

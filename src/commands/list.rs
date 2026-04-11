@@ -1,5 +1,5 @@
-use std::{collections::HashMap, fs};
 use std::path::Path;
+use std::{collections::HashMap, fs};
 
 use crate::{
     config::Config,
@@ -46,7 +46,8 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
         if !matches!(only, Some(Only::Agent)) {
             if let Some(skills_dir) = resolve_path(tool, &AssetType::Skill, false, None) {
                 if skills_dir.is_dir() {
-                    let mut grouped: HashMap<String, Vec<(String, Option<String>, Vec<String>)>> = HashMap::new();
+                    let mut grouped: HashMap<String, Vec<(String, Option<String>, Vec<String>)>> =
+                        HashMap::new();
                     let mut ungrouped: Vec<(String, Option<String>)> = Vec::new();
 
                     for entry in fs::read_dir(&skills_dir)? {
@@ -55,12 +56,19 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         if path.is_dir() && path.join("SKILL.md").exists() {
                             let name = entry.file_name().to_string_lossy().to_string();
                             let desc = read_description(&path.join("SKILL.md"));
-                            if let Some(repo) = lockfile.repos.iter().find(|r| r.skills.contains(&name)) {
-                                let profiles: Vec<String> = repo.profiles.iter()
+                            if let Some(repo) =
+                                lockfile.repos.iter().find(|r| r.skills.contains(&name))
+                            {
+                                let profiles: Vec<String> = repo
+                                    .profiles
+                                    .iter()
                                     .filter(|p| p.skills.contains(&name))
                                     .map(|p| p.name.clone())
                                     .collect();
-                                grouped.entry(repo.name.clone()).or_default().push((name, desc, profiles));
+                                grouped
+                                    .entry(repo.name.clone())
+                                    .or_default()
+                                    .push((name, desc, profiles));
                             } else {
                                 ungrouped.push((name, desc));
                             }
@@ -72,19 +80,26 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         let mut repos: Vec<String> = grouped.keys().cloned().collect();
                         repos.sort();
                         for repo in repos {
-                            let repo_profiles: Vec<String> = lockfile.repos.iter()
+                            let repo_profiles: Vec<String> = lockfile
+                                .repos
+                                .iter()
                                 .find(|r| r.name == repo)
                                 .map(|r| r.profiles.iter().map(|p| p.name.clone()).collect())
                                 .unwrap_or_default();
                             if repo_profiles.is_empty() {
                                 println!("  {}", repo.cyan());
                             } else {
-                                println!("  {}  {}", repo.cyan(), format!("[{}]", repo_profiles.join(", ")).dimmed());
+                                println!(
+                                    "  {}  {}",
+                                    repo.cyan(),
+                                    format!("[{}]", repo_profiles.join(", ")).dimmed()
+                                );
                             }
 
                             let mut skills = grouped[&repo].clone();
                             skills.sort_by(|a, b| a.0.cmp(&b.0));
-                            let max_name_len = skills.iter().map(|(n, _, _)| n.len()).max().unwrap_or(0);
+                            let max_name_len =
+                                skills.iter().map(|(n, _, _)| n.len()).max().unwrap_or(0);
                             for (skill, desc, profiles) in skills {
                                 let desc_part = desc
                                     .as_deref()
@@ -93,9 +108,20 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                                 let profiles_part = if profiles.is_empty() {
                                     String::new()
                                 } else {
-                                    format!("  {} {}", "·".dimmed(), profiles.join(", ").bright_yellow())
+                                    format!(
+                                        "  {} {}",
+                                        "·".dimmed(),
+                                        profiles.join(", ").bright_yellow()
+                                    )
                                 };
-                                println!("    {} {:<width$}{}{}", "›".dimmed(), skill, desc_part, profiles_part, width = max_name_len);
+                                println!(
+                                    "    {} {:<width$}{}{}",
+                                    "›".dimmed(),
+                                    skill,
+                                    desc_part,
+                                    profiles_part,
+                                    width = max_name_len
+                                );
                             }
                         }
                         if !ungrouped.is_empty() {
@@ -117,7 +143,8 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
         if !matches!(only, Some(Only::Skill)) {
             if let Some(agents_dir) = resolve_path(tool, &AssetType::Agent, false, None) {
                 if agents_dir.is_dir() {
-                    let mut grouped: HashMap<String, Vec<(String, Option<String>, Vec<String>)>> = HashMap::new();
+                    let mut grouped: HashMap<String, Vec<(String, Option<String>, Vec<String>)>> =
+                        HashMap::new();
                     let mut ungrouped: Vec<(String, Option<String>)> = Vec::new();
 
                     for entry in fs::read_dir(&agents_dir)? {
@@ -126,12 +153,19 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         if path.extension().map_or(false, |e| e == "md") {
                             let name = entry.file_name().to_string_lossy().to_string();
                             let desc = read_description(&path);
-                            if let Some(repo) = lockfile.repos.iter().find(|r| r.agents.contains(&name)) {
-                                let profiles: Vec<String> = repo.profiles.iter()
+                            if let Some(repo) =
+                                lockfile.repos.iter().find(|r| r.agents.contains(&name))
+                            {
+                                let profiles: Vec<String> = repo
+                                    .profiles
+                                    .iter()
                                     .filter(|p| p.agents.contains(&name))
                                     .map(|p| p.name.clone())
                                     .collect();
-                                grouped.entry(repo.name.clone()).or_default().push((name, desc, profiles));
+                                grouped
+                                    .entry(repo.name.clone())
+                                    .or_default()
+                                    .push((name, desc, profiles));
                             } else {
                                 ungrouped.push((name, desc));
                             }
@@ -143,19 +177,26 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                         let mut repos: Vec<String> = grouped.keys().cloned().collect();
                         repos.sort();
                         for repo in repos {
-                            let repo_profiles: Vec<String> = lockfile.repos.iter()
+                            let repo_profiles: Vec<String> = lockfile
+                                .repos
+                                .iter()
                                 .find(|r| r.name == repo)
                                 .map(|r| r.profiles.iter().map(|p| p.name.clone()).collect())
                                 .unwrap_or_default();
                             if repo_profiles.is_empty() {
                                 println!("  {}", repo.cyan());
                             } else {
-                                println!("  {}  {}", repo.cyan(), format!("[{}]", repo_profiles.join(", ")).dimmed());
+                                println!(
+                                    "  {}  {}",
+                                    repo.cyan(),
+                                    format!("[{}]", repo_profiles.join(", ")).dimmed()
+                                );
                             }
 
                             let mut agents = grouped[&repo].clone();
                             agents.sort_by(|a, b| a.0.cmp(&b.0));
-                            let max_name_len = agents.iter().map(|(n, _, _)| n.len()).max().unwrap_or(0);
+                            let max_name_len =
+                                agents.iter().map(|(n, _, _)| n.len()).max().unwrap_or(0);
                             for (agent, desc, profiles) in agents {
                                 let desc_part = desc
                                     .as_deref()
@@ -164,9 +205,20 @@ pub fn list(only: Option<Only>) -> Result<(), SklError> {
                                 let profiles_part = if profiles.is_empty() {
                                     String::new()
                                 } else {
-                                    format!("  {} {}", "·".dimmed(), profiles.join(", ").bright_yellow())
+                                    format!(
+                                        "  {} {}",
+                                        "·".dimmed(),
+                                        profiles.join(", ").bright_yellow()
+                                    )
                                 };
-                                println!("    {} {:<width$}{}{}", "›".dimmed(), agent, desc_part, profiles_part, width = max_name_len);
+                                println!(
+                                    "    {} {:<width$}{}{}",
+                                    "›".dimmed(),
+                                    agent,
+                                    desc_part,
+                                    profiles_part,
+                                    width = max_name_len
+                                );
                             }
                         }
                         if !ungrouped.is_empty() {

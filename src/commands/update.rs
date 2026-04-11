@@ -1,13 +1,17 @@
 use crate::{
     commands::repo::{copy_dir, find_files, normalize_repo_id},
     config::{Config, source_path},
-    lock::{Lockfile, LockedRepo},
+    lock::{LockedRepo, Lockfile},
     profile::SklToml,
     types::{AssetType, SklError, Tool, resolve_path},
     ui,
 };
 use colored::Colorize;
-use std::{fs, path::Path, process::{Command, Stdio}};
+use std::{
+    fs,
+    path::Path,
+    process::{Command, Stdio},
+};
 
 pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> {
     let config = Config::load()?;
@@ -70,11 +74,15 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
         let profile_filter: Option<(Vec<String>, Vec<String>)> = if !locked.profiles.is_empty() {
             match SklToml::load(&source_dir)? {
                 Some(skl_toml) => {
-                    let names: Vec<String> = locked.profiles.iter().map(|p| p.name.clone()).collect();
+                    let names: Vec<String> =
+                        locked.profiles.iter().map(|p| p.name.clone()).collect();
                     Some(skl_toml.resolve_profiles(&names))
                 }
                 None => {
-                    ui::warning(&format!("skl.toml not found in {}, installing all skills", repo_id.bold()));
+                    ui::warning(&format!(
+                        "skl.toml not found in {}, installing all skills",
+                        repo_id.bold()
+                    ));
                     None
                 }
             }
@@ -87,11 +95,19 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
 
         // Effective lists after applying profile filter
         let effective_skills: Vec<String> = match &profile_filter {
-            Some((ps, _)) => current_skills.iter().filter(|s| ps.contains(s)).cloned().collect(),
+            Some((ps, _)) => current_skills
+                .iter()
+                .filter(|s| ps.contains(s))
+                .cloned()
+                .collect(),
             None => current_skills.clone(),
         };
         let effective_agents: Vec<String> = match &profile_filter {
-            Some((_, pa)) => current_agents.iter().filter(|a| pa.contains(a)).cloned().collect(),
+            Some((_, pa)) => current_agents
+                .iter()
+                .filter(|a| pa.contains(a))
+                .cloned()
+                .collect(),
             None => current_agents.clone(),
         };
 
@@ -99,10 +115,12 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
         let mut installed_agents = Vec::new();
 
         for tool in &tools {
-            let skills_dest = resolve_path(tool, &AssetType::Skill, false, None)
-                .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
-            let agents_dest = resolve_path(tool, &AssetType::Agent, false, None)
-                .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
+            let skills_dest = resolve_path(tool, &AssetType::Skill, false, None).ok_or(
+                SklError::InvalidArguments("Could not resolve destination path".to_string()),
+            )?;
+            let agents_dest = resolve_path(tool, &AssetType::Agent, false, None).ok_or(
+                SklError::InvalidArguments("Could not resolve destination path".to_string()),
+            )?;
 
             for skill in &locked.skills {
                 if !effective_skills.contains(skill) {
@@ -146,16 +164,18 @@ pub fn update(repo: Option<String>, tool: Option<Tool>) -> Result<(), SklError> 
         // Update locked profiles with refreshed skill/agent lists from skl.toml
         let updated_profiles = if !locked.profiles.is_empty() {
             match SklToml::load(&source_dir)? {
-                Some(skl_toml) => locked.profiles.iter().map(|lp| {
-                    match skl_toml.get_profile(&lp.name) {
+                Some(skl_toml) => locked
+                    .profiles
+                    .iter()
+                    .map(|lp| match skl_toml.get_profile(&lp.name) {
                         Ok(p) => crate::lock::LockedProfile {
                             name: lp.name.clone(),
                             skills: p.skills.clone(),
                             agents: p.agents.clone(),
                         },
                         Err(_) => lp.clone(),
-                    }
-                }).collect(),
+                    })
+                    .collect(),
                 None => locked.profiles.clone(),
             }
         } else {
@@ -199,7 +219,10 @@ fn scan_agents(source: &Path) -> Result<Vec<String>, SklError> {
     Ok(agents)
 }
 
-fn find_skill_path(source: &Path, skill_name: &str) -> Result<Option<std::path::PathBuf>, SklError> {
+fn find_skill_path(
+    source: &Path,
+    skill_name: &str,
+) -> Result<Option<std::path::PathBuf>, SklError> {
     Ok(find_files(source, "SKILL.md")?
         .into_iter()
         .find(|p| p.file_name().map_or(false, |n| n == skill_name)))

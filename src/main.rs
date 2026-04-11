@@ -113,14 +113,9 @@ enum Commands {
 #[derive(Subcommand)]
 enum ConfigAction {
     /// Set a configuration value
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
     /// Get a configuration value
-    Get {
-        key: String,
-    },
+    Get { key: String },
     /// List all configuration values
     List,
     /// Show the config file location
@@ -132,14 +127,25 @@ fn main() {
 
     let result = match args.command {
         Commands::Init => commands::init::init().map(|_| ()),
-        Commands::Install { source, tool, local, dest, skill, agent, only, profile } => {
-            commands::install::install(source, tool, local, dest, skill, agent, only, profile)
-        }
+        Commands::Install {
+            source,
+            tool,
+            local,
+            dest,
+            skill,
+            agent,
+            only,
+            profile,
+        } => commands::install::install(source, tool, local, dest, skill, agent, only, profile),
         Commands::List { only } => commands::list::list(only),
         Commands::Show { name } => commands::show::show(name),
         Commands::Update { repo, tool } => commands::update::update(repo, tool),
         Commands::New { name } => commands::new::new(name),
-        Commands::Uninstall { repo, skill, profile } => commands::uninstall::uninstall(repo, skill, profile),
+        Commands::Uninstall {
+            repo,
+            skill,
+            profile,
+        } => commands::uninstall::uninstall(repo, skill, profile),
         Commands::Config { action } => match action {
             ConfigAction::Get { key } => commands::config::get(&key),
             ConfigAction::Set { key, value } => commands::config::set(&key, &value),

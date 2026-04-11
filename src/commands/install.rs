@@ -1,7 +1,10 @@
 use crate::{
-    commands::{init::init, repo::{copy_dir, find_files, normalize_repo_id}},
+    commands::{
+        init::init,
+        repo::{copy_dir, find_files, normalize_repo_id},
+    },
     config::{Config, source_path},
-    lock::{Lockfile, LockedProfile, LockedRepo},
+    lock::{LockedProfile, LockedRepo, Lockfile},
     profile::SklToml,
     types::{AssetType, Only, SklError, Tool, resolve_path},
     ui,
@@ -54,11 +57,20 @@ pub fn install(
     let local_source = source_path()?.join(&repo_id);
     fs::create_dir_all(local_source.parent().unwrap())?;
     if local_source.exists() {
-        ui::warning(&format!("{} already cloned — run {} to refresh", repo_id.bold(), "skl update".cyan()));
+        ui::warning(&format!(
+            "{} already cloned — run {} to refresh",
+            repo_id.bold(),
+            "skl update".cyan()
+        ));
     } else {
         let sp = ui::spinner(&format!("Cloning {}", repo_id.bold()));
         let status = Command::new("git")
-            .args(["clone", "--depth=1", &source, local_source.to_str().unwrap()])
+            .args([
+                "clone",
+                "--depth=1",
+                &source,
+                local_source.to_str().unwrap(),
+            ])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()?;
@@ -78,11 +90,7 @@ pub fn install(
             skills: p.skills.clone(),
             agents: p.agents.clone(),
         };
-        (
-            Some(p.skills.clone()),
-            Some(p.agents.clone()),
-            Some(locked),
-        )
+        (Some(p.skills.clone()), Some(p.agents.clone()), Some(locked))
     } else {
         (skills, agents, None)
     };
@@ -91,10 +99,12 @@ pub fn install(
     let mut installed_agents = Vec::new();
 
     for tool in &tools {
-        let skills_dest = resolve_path(tool, &AssetType::Skill, local, dest.as_ref())
-            .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
-        let agents_dest = resolve_path(tool, &AssetType::Agent, local, dest.as_ref())
-            .ok_or(SklError::InvalidArguments("Could not resolve destination path".to_string()))?;
+        let skills_dest = resolve_path(tool, &AssetType::Skill, local, dest.as_ref()).ok_or(
+            SklError::InvalidArguments("Could not resolve destination path".to_string()),
+        )?;
+        let agents_dest = resolve_path(tool, &AssetType::Agent, local, dest.as_ref()).ok_or(
+            SklError::InvalidArguments("Could not resolve destination path".to_string()),
+        )?;
 
         match &only {
             Some(Only::Skill) => {
@@ -130,7 +140,11 @@ pub fn install(
     Ok(())
 }
 
-fn deploy_skills(source: &Path, dest: &Path, skills: Option<Vec<String>>) -> Result<Vec<String>, SklError> {
+fn deploy_skills(
+    source: &Path,
+    dest: &Path,
+    skills: Option<Vec<String>>,
+) -> Result<Vec<String>, SklError> {
     let found_skills = find_files(source, "SKILL.md")?;
 
     if found_skills.is_empty() {
@@ -168,7 +182,11 @@ fn deploy_skills(source: &Path, dest: &Path, skills: Option<Vec<String>>) -> Res
     Ok(installed_skills)
 }
 
-fn deploy_agents(source: &Path, dest: &Path, agents: Option<Vec<String>>) -> Result<Vec<String>, SklError> {
+fn deploy_agents(
+    source: &Path,
+    dest: &Path,
+    agents: Option<Vec<String>>,
+) -> Result<Vec<String>, SklError> {
     let agents_dir = source.join("agents");
     let found_agents = find_files(&agents_dir, ".md")?;
 

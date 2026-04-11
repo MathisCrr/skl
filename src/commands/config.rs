@@ -1,4 +1,8 @@
-use crate::{config::{Config, config_path}, types::SklError, ui};
+use crate::{
+    config::{Config, config_path},
+    types::SklError,
+    ui,
+};
 use colored::Colorize;
 
 pub fn get(key: &str) -> Result<(), SklError> {
@@ -16,7 +20,12 @@ pub fn set(key: &str, value: &str) -> Result<(), SklError> {
     let mut config = Config::load()?;
 
     match key {
-        "tools" => config.tools = value.split(',').map(|t| t.trim().parse().unwrap()).collect(),
+        "tools" => {
+            config.tools = value
+                .split(',')
+                .map(|t| t.trim().parse().unwrap())
+                .collect()
+        }
         _ => {
             println!("Unknown key: '{}'. Valid keys: tools", key);
             return Ok(());

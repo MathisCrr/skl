@@ -50,13 +50,23 @@ impl SklToml {
         for name in profile_names {
             match self.get_profile(name) {
                 Ok(p) => {
-                    for s in &p.skills { if !skills.contains(s) { skills.push(s.clone()); } }
-                    for a in &p.agents { if !agents.contains(a) { agents.push(a.clone()); } }
+                    for s in &p.skills {
+                        if !skills.contains(s) {
+                            skills.push(s.clone());
+                        }
+                    }
+                    for a in &p.agents {
+                        if !agents.contains(a) {
+                            agents.push(a.clone());
+                        }
+                    }
                 }
-                Err(_) => crate::ui::warning(&format!("profile '{}' no longer exists in skl.toml, skipping", name)),
+                Err(_) => crate::ui::warning(&format!(
+                    "profile '{}' no longer exists in skl.toml, skipping",
+                    name
+                )),
             }
         }
         (skills, agents)
     }
-
 }

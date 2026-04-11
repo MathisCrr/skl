@@ -28,7 +28,12 @@ pub enum AssetType {
 /// If `local` is true, checks for a tool folder in the current directory first,
 /// then falls back to ./skills/ or ./agents/.
 /// If `dest` is provided, uses that as the base path.
-pub fn resolve_path(tool: &Tool, asset: &AssetType, local: bool, dest: Option<&PathBuf>) -> Option<PathBuf> {
+pub fn resolve_path(
+    tool: &Tool,
+    asset: &AssetType,
+    local: bool,
+    dest: Option<&PathBuf>,
+) -> Option<PathBuf> {
     if let Some(base) = dest {
         return Some(match asset {
             AssetType::Skill => base.join("skills"),
@@ -40,7 +45,11 @@ pub fn resolve_path(tool: &Tool, asset: &AssetType, local: bool, dest: Option<&P
         let tool_dir = match tool {
             Tool::Claude => PathBuf::from(".claude"),
         };
-        let base = if tool_dir.exists() { tool_dir } else { PathBuf::from(".") };
+        let base = if tool_dir.exists() {
+            tool_dir
+        } else {
+            PathBuf::from(".")
+        };
         return Some(match asset {
             AssetType::Skill => base.join("skills"),
             AssetType::Agent => base.join("agents"),
@@ -48,12 +57,8 @@ pub fn resolve_path(tool: &Tool, asset: &AssetType, local: bool, dest: Option<&P
     }
 
     match (tool, asset) {
-        (Tool::Claude, AssetType::Skill) => {
-            Some(dirs::home_dir()?.join(".claude").join("skills"))
-        }
-        (Tool::Claude, AssetType::Agent) => {
-            Some(dirs::home_dir()?.join(".claude").join("agents"))
-        }
+        (Tool::Claude, AssetType::Skill) => Some(dirs::home_dir()?.join(".claude").join("skills")),
+        (Tool::Claude, AssetType::Agent) => Some(dirs::home_dir()?.join(".claude").join("agents")),
     }
 }
 
@@ -96,7 +101,9 @@ impl fmt::Display for SklError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SklError::ConfigDirectoryNotFound => write!(f, "Could not find config directory"),
-            SklError::ConfigNotFound => write!(f, "Config not found. Run `skl install` to get started"),
+            SklError::ConfigNotFound => {
+                write!(f, "Config not found. Run `skl install` to get started")
+            }
             SklError::ConfigParseError(msg) => write!(f, "Invalid config: {}", msg),
             SklError::GitCloneFailed => write!(f, "Failed to clone repository"),
             SklError::IoError(err) => write!(f, "IO error: {}", err),
@@ -106,7 +113,11 @@ impl fmt::Display for SklError {
                 f,
                 "Profile '{}' not found. Available profiles: {}",
                 name,
-                if available.is_empty() { "none (no skl.toml in this repository)".to_string() } else { available.join(", ") }
+                if available.is_empty() {
+                    "none (no skl.toml in this repository)".to_string()
+                } else {
+                    available.join(", ")
+                }
             ),
         }
     }
