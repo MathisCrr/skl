@@ -6,12 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  check:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,16 +20,61 @@ jobs:
             echo "::error::Version mismatch: Cargo.toml=$CARGO_VERSION, tag=$TAG_VERSION"
             exit 1
           fi
+    
+  build:
+    needs: check
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest                                                                                             
+            artifact: skl-linux
+            binary: target/release/skl
+          - os: macos-latest                                                                                              
+            artifact: skl-macos
+            binary: target/release/skl                                                                                    
+          - os: windows-latest
+            artifact: skl-windows
+            binary: target/release/skl.exe
+          
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+            
+      - name: Cargo build
+        run: cargo build --release
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+  
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       
       - name: Cargo publish
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      
-      - name: Cargo build
-        run: cargo build --release
-      
-      - name: Github release
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4                                                                                
+        with:   
+          path: artifacts
+
+      - name: GitHub release
         uses: softprops/action-gh-release@v2
-        with:
-          files: target/release/skl
+        with:                                                                                                             
+          files: |
+            artifacts/skl-linux/skl                                                                                       
+            artifacts/skl-macos/skl
+            artifacts/skl-windows/skl.exe 

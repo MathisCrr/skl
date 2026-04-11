@@ -4,174 +4,85 @@
 
 Install and share skills and agents across your team — regardless of the AI tool you use.
 
-```sh
-skl install https://github.com/my-org/skills
-skl list
-skl update
-skl uninstall my-org/skills
-```
-
 ---
 
 ## What is skl?
 
-AI tools like Claude Code, Cursor, and VS Code Copilot support custom instructions called **skills** (slash commands) and **agents** (sub-agents). Teams often want to share these across projects and teammates, but there's no standard way to do it.
+AI tools support custom instructions called **skills** and **agents**. Teams often want to share these across projects and teammates, but there's no standard way to do it.
 
-`skl` solves this by treating skill repositories like packages — clone, install, update, and uninstall them just like you would npm packages.
+`skl` solves this by treating skill repositories like packages — install, update, and uninstall them just like you would npm packages.
 
 ---
 
 ## Installation
 
 ```sh
-cargo install skl
+cargo install skl-cli
 ```
 
-Or build from source:
+Or with the install script (Linux and MacOs):
 
 ```sh
-git clone https://github.com/your-org/skl
-cd skl
-cargo build --release
-```
-
----
-
-## Quick Start
-
-Install skills from a GitHub repository:
-
-```sh
-skl install https://github.com/my-org/skills
-```
-
-On first run, `skl` will detect which AI tools are installed on your machine and ask which ones to install for.
-
-List what's installed:
-
-```sh
-skl list
-```
-
-Update all repositories:
-
-```sh
-skl update
-```
-
-Uninstall a repository:
-
-```sh
-skl uninstall my-org/skills
+curl -fsSL https://raw.githubusercontent.com/MathisCrr/skl/main/install.sh | bash
 ```
 
 ---
 
-## Commands
-
-### `skl install <source>`
-
-Install skills and agents from a GitHub repository.
+## Quick start
 
 ```sh
-skl install https://github.com/my-org/skills
-```
+# 1. Set up skl and select your AI tools
+skl init
 
-**Options:**
-
-| Flag | Description |
-|------|-------------|
-| `--tool <tool>` | Install only for a specific tool (e.g. `claude`) |
-| `--local` | Install in the current directory instead of globally |
-| `--dest <path>` | Install to a custom destination folder |
-| `--skill <name>...` | Install only specific skills by name |
-| `--agent <name>...` | Install only specific agents by name |
-| `--only skills\|agents` | Install only skills or only agents |
-
-**Examples:**
-
-```sh
-# Install everything globally
+# 2. Install a skill repository
 skl install https://github.com/my-org/skills
 
-# Install locally (into .claude/ or ./skills/ in the current directory)
-skl install https://github.com/my-org/skills --local
-
-# Install only specific skills
-skl install https://github.com/my-org/skills --skill review-pr commit
-
-# Install to a custom path
-skl install https://github.com/my-org/skills --dest ./my-project/.claude
-
-# Install only for Claude Code
-skl install https://github.com/my-org/skills --tool claude
-```
-
-### `skl list`
-
-List all installed skills and agents, grouped by repository.
-
-```sh
+# 3. See what's installed
 skl list
-skl list --only skills
-skl list --only agents
-```
 
-### `skl update [repo]`
-
-Update installed repositories by fetching the latest changes.
-
-```sh
-# Update all repositories
+# 4. Update all repositories (or a specific one)
 skl update
-
-# Update a specific repository
 skl update my-org/skills
 
-# Update only for a specific tool
-skl update --tool claude
-```
-
-### `skl uninstall <repo>`
-
-Uninstall a repository and remove all its skills and agents.
-
-```sh
+# 6. Uninstall a repository
 skl uninstall my-org/skills
-skl uninstall https://github.com/my-org/skills
 ```
 
-### `skl init`
-
-Run the setup wizard to configure which AI tools to install for.
-
-```sh
-skl init
-```
-
-### `skl config`
-
-Manage skl configuration.
-
-```sh
-skl config list              # Show current configuration
-skl config get tools         # Get a specific key
-skl config set tools claude  # Set a value
-skl config locate            # Show the config file path
-```
+For all available options, use `skl --help` or `skl <command> --help`.
 
 ---
 
-## Skill Repository Format
+## Repository format & profiles
 
-Any Git repository works. `skl` scans recursively for:
+Any Git repository works. Use `skl new <name>` to scaffold a boilerplate. `skl` scans for:
 
 - **Skills** — any folder containing a `SKILL.md` file (the folder name becomes the skill name)
 - **Agents** — any `.md` file inside an `agents/` directory
 
+Optionally, a `skl.toml` at the root defines **profiles** — named subsets of skills and agents:
+
+```toml
+[profile.backend]
+skills = ["commit", "review-pr"]
+agents = ["code-reviewer.md"]
+
+[profile.frontend]
+skills = ["commit", "css-helper"]
+```
+
+Profiles let you install only what's relevant to a context. A large shared repository can have dozens of skills — profiles let each role (backend, frontend, devops) install only what they need, without touching the rest.
+
+```sh
+# Install only the backend profile
+skl install https://github.com/my-org/skills --profile backend
+
+# Uninstall a profile
+skl uninstall my-org/skills --profile backend
+```
+
 ---
 
-## Supported Tools
+## Supported tools
 
 | Tool | Skills path | Agents path |
 |------|-------------|-------------|
@@ -181,25 +92,12 @@ More tools coming soon (Cursor, VS Code Copilot, Windsurf).
 
 ---
 
-## How It Works
+## How it works
 
-- **Global install** — skills go into `~/.claude/skills/`, agents into `~/.claude/agents/`
-- **Local install** (`--local`) — installs into `.claude/skills/` or `./skills/` relative to the current directory
-- **Custom dest** (`--dest`) — installs into `<dest>/skills/` and `<dest>/agents/`
-- A `skl.lock` file at `~/.config/skl/skl.lock` tracks what's installed and from which repositories
-- `skl update` uses shallow clones (`--depth=1`) for fast, bandwidth-efficient updates
-
----
-
-## Configuration
-
-The config file lives at `~/.config/skl/config.toml`:
-
-```toml
-tools = ["claude"]
-```
-
-Use `skl config locate` to find it on your system.
+- Skills are installed globally by default (`~/.claude/skills/`)
+- `--local` installs into `.claude/` relative to the current directory
+- `skl.lock` at `~/.config/skl/skl.lock` tracks installed repositories and profiles
+- Updates use `git fetch` + `git reset --hard` for clean, reproducible installs
 
 ---
 
