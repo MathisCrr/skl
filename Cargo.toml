@@ -1,6 +1,6 @@
 [package]
 name = "skl-cli"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "AI skills package manager — install, share and manage skills, contexts and agents across your team."
 repository = "https://github.com/MathisCrr/skl"

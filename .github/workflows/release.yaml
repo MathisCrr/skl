@@ -44,12 +44,16 @@ jobs:
             
       - name: Cargo build
         run: cargo build --release
-        
+
+      - name: Rename binary
+        shell: bash
+        run: cp ${{ matrix.binary }} target/release/${{ matrix.artifact }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.binary }}
+          path: target/release/${{ matrix.artifact }}
   
   publish:
     needs: build
@@ -75,6 +79,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:                                                                                                             
           files: |
-            artifacts/skl-linux/skl                                                                                       
-            artifacts/skl-macos/skl
-            artifacts/skl-windows/skl.exe 
+            artifacts/skl-linux/skl-linux
+            artifacts/skl-macos/skl-macos
+            artifacts/skl-windows/skl-windows
