@@ -53,6 +53,10 @@ pub fn copy_dir(src: &Path, dest: &Path) -> Result<(), SklError> {
 
     for entry in fs::read_dir(src)? {
         let entry = entry?;
+        // Skip .git: useless in a deployed asset, and its read-only packs break re-copies.
+        if entry.file_name() == ".git" {
+            continue;
+        }
         let src_path = entry.path();
         let dest_path = dest.join(entry.file_name());
 
