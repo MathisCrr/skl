@@ -32,7 +32,9 @@ fn read_description(path: &Path) -> Option<String> {
                 // Multi-line YAML scalar (> or |): collect indented continuation lines
                 let mut parts = Vec::new();
                 for continuation in lines.by_ref() {
-                    if continuation == "---" || (!continuation.starts_with(' ') && !continuation.starts_with('\t')) {
+                    if continuation == "---"
+                        || (!continuation.starts_with(' ') && !continuation.starts_with('\t'))
+                    {
                         break;
                     }
                     parts.push(continuation.trim());
