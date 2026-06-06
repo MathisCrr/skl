@@ -25,6 +25,13 @@ pub fn find_files(dir: &Path, filename: &str) -> Result<Vec<PathBuf>, SklError> 
         return Ok(files);
     }
 
+    // If the file exists directly at the root, treat the whole directory
+    // as a single-asset repo (skill name = repo name).
+    if dir.join(filename).exists() {
+        files.push(dir.to_path_buf());
+        return Ok(files);
+    }
+
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
