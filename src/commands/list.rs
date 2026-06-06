@@ -11,7 +11,9 @@ use colored::Colorize;
 fn read_description(path: &Path) -> Option<String> {
     let content = fs::read_to_string(path).ok()?;
     let mut in_frontmatter = false;
-    for line in content.lines() {
+    let mut lines = content.lines();
+
+    while let Some(line) = lines.next() {
         if line == "---" {
             if !in_frontmatter {
                 in_frontmatter = true;
@@ -22,7 +24,23 @@ fn read_description(path: &Path) -> Option<String> {
         }
         if in_frontmatter {
             if let Some(desc) = line.strip_prefix("description:") {
-                return Some(desc.trim().to_string());
+                let desc = desc.trim();
+                // Single-line description
+                if !desc.is_empty() && desc != ">" && desc != "|" {
+                    return Some(desc.to_string());
+                }
+                // Multi-line YAML scalar (> or |): collect indented continuation lines
+                let mut parts = Vec::new();
+                for continuation in lines.by_ref() {
+                    if continuation == "---" || (!continuation.starts_with(' ') && !continuation.starts_with('\t')) {
+                        break;
+                    }
+                    parts.push(continuation.trim());
+                }
+                if parts.is_empty() {
+                    return None;
+                }
+                return Some(parts.join(" "));
             }
         }
     }
